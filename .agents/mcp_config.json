@@ -1,12 +1,24 @@
 {
   "mcpServers": {
     "contextos": {
-      "args": [
-        "-repo",
-        "/Users/rohitshukla/Desktop/langchain-mcp-researcher",
-        "-mcp"
-      ],
-      "command": "/Users/rohitshukla/Desktop/ContextOS/bin/contextd"
+      "command": "./bin/contextd",
+      "args": ["-repo", ".", "-mcp"]
+    },
+    "arxiv": {
+      "command": "./bin/arxiv-mcp-server",
+      "args": []
+    },
+    "pdf-reader": {
+      "command": "./bin/pdf-reader-mcp-server",
+      "args": []
+    },
+    "software-eng": {
+      "command": "./bin/software-eng-mcp-server",
+      "args": []
+    },
+    "ai-correctness": {
+      "command": "python3",
+      "args": ["-m", "ai_correctness_mcp_server", "--serve"]
     }
   }
 }

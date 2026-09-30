@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  go-mcp-tests:
+    name: Go MCP Servers Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Build Go MCP servers
+        run: |
+          go build -v ./arxiv-mcp-server
+          go build -v ./pdf-reader-mcp-server-go
+          go build -v ./software-eng-mcp-server-go
+
+      - name: Run Go tests
+        run: |
+          go test -v ./arxiv-mcp-server/... ./pdf-reader-mcp-server-go/... ./software-eng-mcp-server-go/...
+
+  python-correctness-tests:
+    name: AI Correctness & Research Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev]
+
+      - name: Run Pytest test suite
+        run: |
+          pytest ai_correctness_mcp_server/tests research/tests -v
+
+      - name: Run AI Correctness MCP Smoke Test
+        run: |
+          python -m ai_correctness_mcp_server --smoke-test
+
+      - name: Run Research Experiment Smoke Test
+        run: |
+          python -c "from ai_correctness_mcp_server.experiments.runner import ExperimentRunner; runner = ExperimentRunner(); res = runner.run_calibration_experiment('EXP-CI-001', 'CI Smoke', 'Coverage', sample_size=50); print('CI Experiment:', res)"

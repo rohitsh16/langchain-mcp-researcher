@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langchain-mcp-researcher"
+version = "0.2.0"
+description = "Research platform for mathematical bounding, estimation, and statistical certification of AI output correctness."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Rohit Shukla", email = "rohitshukla7970@gmail.com" }
+]
+dependencies = [
+    "pydantic>=2.7.0",
+    "pyyaml>=6.0",
+    "httpx>=0.27.0",
+    "langchain-core>=0.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+]
+full = [
+    "langchain>=0.2.0",
+    "langchain-community>=0.2.0",
+    "langchain-openai>=0.1.0",
+    "rich>=13.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["research*", "ai_correctness_mcp_server*", "langchain-agent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["ai_correctness_mcp_server/tests", "research/tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["."]
+addopts = "-v --tb=short"

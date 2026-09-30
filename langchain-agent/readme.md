@@ -4,9 +4,14 @@ An autonomous research agent orchestrating high-performance Golang Model Context
 
 ## Features
 
-- **Multi-Server Stdio MCP Client**: Connects natively to Go MCP binaries over standard I/O pipes using the standard JSON-RPC 2.0 protocol.
-- **Dynamic Tool Discovery**: Auto-detects all tools (`search_arxiv`, `get_arxiv_paper`, `read_pdf`, `read_pdf_url`, `search_swe_articles`, `get_swe_pattern`).
-- **Autonomous Synthesis**: Merges academic findings from arXiv with production software engineering design patterns.
+- **Multi-Server Stdio MCP Client**: Connects natively to Go and Python MCP servers over standard I/O pipes using the standard JSON-RPC 2.0 protocol.
+- **Dynamic Tool Discovery**: Auto-detects 32 tools across all 5 integrated servers:
+  - `arxiv`: Academic paper search and metadata extraction.
+  - `pdf-reader`: Local and remote PDF section text extraction.
+  - `software-eng`: Software engineering and agent architecture design patterns.
+  - `contextos`: 6-pass reciprocal rank token allocation, durable knowledge memory, and event tracing.
+  - `ai_correctness`: Finite-sample conformal prediction, atomic claim extraction, multi-tier verification, and formal correctness certificates.
+- **Autonomous Synthesis & Verification**: Merges academic findings from arXiv with SWE design patterns, validates claims against retrieved evidence, and appends a formal `OutputCorrectnessCertificate`.
 - **Self-Contained & Resilient**: Operates with LLM API keys (`OPENAI_API_KEY`) or in offline deterministic mode with zero external dependencies.
 
 ## Quickstart

@@ -22,6 +22,11 @@ mcp_servers:
     name: "ContextOS Persistent Memory & Context"
     command: "../bin/contextd"
     args: ["-repo", "..", "-mcp"]
+  ai_correctness:
+    name: "AI Output Correctness & Verification"
+    command: "python3"
+    args: ["-m", "ai_correctness_mcp_server", "--serve"]
+    cwd: ".."
 
 research:
   max_papers: 5

@@ -7,7 +7,10 @@ endif
 BINDIR=bin
 LDFLAGS=-ldflags="-linkmode=external"
 
-.PHONY: all build-all test clean ctx-stats ctx-index run-agent test-agent
+.PHONY: all build-all test clean ctx-stats ctx-index run-agent test-agent unit-test smoke-test research-smoke benchmark ci
+
+PYTHON ?= .venv/bin/python3
+PYTEST ?= .venv/bin/pytest
 
 all: build-all
 
@@ -25,16 +28,35 @@ test:
 
 test-agent: build-all
 	@echo "🧪 Testing LangChain MCP agent integration..."
-	python3 langchain-agent/agent_runner.py --test
+	@$(PYTHON) langchain-agent/agent_runner.py --test
 
 run-agent: build-all
-	@python3 langchain-agent/agent_runner.py
+	@$(PYTHON) langchain-agent/agent_runner.py
 
 ctx-stats:
 	@./bin/ctx stats -repo .
 
 ctx-index:
 	@./bin/ctx index -repo .
+
+unit-test:
+	@echo "🧪 Running Python correctness & research test suites..."
+	@$(PYTEST) ai_correctness_mcp_server/tests research/tests
+
+smoke-test:
+	@echo "🚀 Running AI correctness MCP server end-to-end smoke test..."
+	@$(PYTHON) -m ai_correctness_mcp_server --smoke-test
+
+research-smoke:
+	@echo "🔬 Running research experiment runner smoke test..."
+	@$(PYTHON) -c "from ai_correctness_mcp_server.experiments.runner import ExperimentRunner; runner = ExperimentRunner(); res = runner.run_calibration_experiment('EXP-SMOKE-001', 'Calibration Smoke', 'Coverage test', sample_size=60); print('EXP RESULT:', res)"
+
+benchmark:
+	@echo "📊 Running factual and reasoning benchmark adapters..."
+	@$(PYTHON) -c "from ai_correctness_mcp_server.benchmarks import SimpleQABenchmark, MathReasoningBenchmark; from ai_correctness_mcp_server.verification.exact import ExactVerifier; b = SimpleQABenchmark(); print('SimpleQA Items:', len(b.data)); m = MathReasoningBenchmark(); print('Math Problems:', len(m.problems))"
+
+ci: test unit-test smoke-test
+	@echo "🎉 All Go and Python CI suites passed successfully!"
 
 clean:
 	@rm -f $(BINDIR)/arxiv-mcp-server $(BINDIR)/pdf-reader-mcp-server $(BINDIR)/software-eng-mcp-server

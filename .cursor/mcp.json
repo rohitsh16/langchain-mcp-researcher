@@ -1,12 +1,28 @@
 {
   "mcpServers": {
     "contextos": {
-      "args": [
-        "-repo",
-        ".",
-        "-mcp"
-      ],
-      "command": "/Users/rohitshukla/Desktop/ContextOS/bin/contextd",
+      "command": "./bin/contextd",
+      "args": ["-repo", ".", "-mcp"],
+      "type": "stdio"
+    },
+    "arxiv": {
+      "command": "./bin/arxiv-mcp-server",
+      "args": [],
+      "type": "stdio"
+    },
+    "pdf-reader": {
+      "command": "./bin/pdf-reader-mcp-server",
+      "args": [],
+      "type": "stdio"
+    },
+    "software-eng": {
+      "command": "./bin/software-eng-mcp-server",
+      "args": [],
+      "type": "stdio"
+    },
+    "ai-correctness": {
+      "command": "python3",
+      "args": ["-m", "ai_correctness_mcp_server", "--serve"],
       "type": "stdio"
     }
   }

@@ -7,6 +7,7 @@ import json
 import logging
 import os
 import subprocess
+import sys
 from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger("mcp_client")
@@ -24,12 +25,13 @@ class StdioMCPClient:
 
     def start(self):
         """Starts the server subprocess and executes initialization handshake."""
-        cmd = [self.command] + self.args
-        cmd_path = os.path.abspath(os.path.join(self.cwd, self.command)) if not os.path.isabs(self.command) else self.command
-
-        if not os.path.exists(cmd_path) and not os.path.isabs(self.command):
-            # check directly
-            cmd_path = self.command
+        cmd_path = self.command
+        if cmd_path in ("python", "python3") and sys.executable:
+            cmd_path = sys.executable
+        elif not os.path.isabs(cmd_path):
+            local_path = os.path.abspath(os.path.join(self.cwd, cmd_path))
+            if os.path.exists(local_path):
+                cmd_path = local_path
 
         self.process = subprocess.Popen(
             [cmd_path] + self.args,
@@ -126,8 +128,9 @@ class MCPRegistry:
         self.clients: Dict[str, StdioMCPClient] = {}
         self.tools_map: Dict[str, StdioMCPClient] = {}
 
-    def register_server(self, server_id: str, command: str, args: Optional[List[str]] = None):
-        client = StdioMCPClient(command, args=args, cwd=self.base_dir)
+    def register_server(self, server_id: str, command: str, args: Optional[List[str]] = None, cwd: Optional[str] = None):
+        server_cwd = os.path.abspath(os.path.join(self.base_dir, cwd)) if cwd else self.base_dir
+        client = StdioMCPClient(command, args=args, cwd=server_cwd)
         client.start()
         self.clients[server_id] = client
 

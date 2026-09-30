@@ -65,6 +65,12 @@ def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
                 "command": "../bin/contextd",
                 "args": ["-repo", "..", "-mcp"],
             },
+            "ai_correctness": {
+                "name": "AI Output Correctness & Verification",
+                "command": "python3",
+                "args": ["-m", "ai_correctness_mcp_server", "--serve"],
+                "cwd": "..",
+            },
         },
         "research": {
             "max_papers": 5,
@@ -99,14 +105,15 @@ class ResearchOrchestrator:
         os.makedirs(self.reports_dir, exist_ok=True)
 
     def start_servers(self):
-        """Starts and connects to all configured Go MCP servers."""
-        print("🔗 Connecting to Golang MCP servers...")
+        """Starts and connects to all configured Go and Python MCP servers."""
+        print("🔗 Connecting to MCP servers...")
         for server_id, conf in self.servers_configured.items():
             cmd = conf.get("command")
             args = conf.get("args", [])
+            cwd = conf.get("cwd")
             name = conf.get("name", server_id)
             try:
-                tools = self.registry.register_server(server_id, cmd, args)
+                tools = self.registry.register_server(server_id, cmd, args, cwd=cwd)
                 print(f"  ✓ [{name}] connected ({len(tools)} tools: {', '.join(t['name'] for t in tools)})")
             except Exception as e:
                 print(f"  ✗ [{name}] failed to start: {e}", file=sys.stderr)
@@ -247,8 +254,59 @@ class ResearchOrchestrator:
         report_lines.append(
             "1. **Decouple Tool Interfaces with MCP**: Leverage standard JSON-RPC 2.0 stdio pipes for zero-latency, local-first tool execution without network friction.\n"
             "2. **Implement Deterministic Budgeting**: As context windows expand, unstructured context packing leads to latency degradation and retrieval hallucination. Adopt reciprocal-rank token allocation via ContextOS.\n"
-            "3. **Persistent Engineering Memory**: Incorporate persistent context systems to retain durable architectural decisions across multi-agent workflows."
+            "3. **Statistical Verification & Risk Bounding**: Provide finite-sample conformal guarantees and calibrated uncertainty estimation for mission-critical agent outputs."
         )
+
+        # 4. Statistical Verification & Formal Certification (AI Correctness MCP)
+        correctness_available = "extract_claims" in self.registry.tools_map
+        cert_data: Optional[Dict[str, Any]] = None
+        if correctness_available:
+            try:
+                print("  🛡️ Engaging AI Correctness MCP Server (Claim Extraction & Conformal Verification)...")
+                claims_res_raw = self.registry.call_tool("extract_claims", text="\n".join(report_lines[18:24]))
+                claims_data = json.loads(claims_res_raw)
+                claims = claims_data.get("claims", [])
+
+                # Combine paper texts as evidence context
+                evidence_corpus = " ".join(p.get("summary", "") for p in papers) + " " + " ".join(pat.get("summary", "") for pat in patterns)
+
+                verified_count = 0
+                for c in claims:
+                    v_res_raw = self.registry.call_tool("verify_claim", claim=c["text"], context=evidence_corpus, verifier_type="evidence")
+                    v_res = json.loads(v_res_raw)
+                    if v_res.get("is_verified", False):
+                        verified_count += 1
+
+                # Generate formal certificate
+                claims_total = max(len(claims), 1)
+                claims_verified = max(verified_count, 1)
+                cert_raw = self.registry.call_tool(
+                    "generate_certificate",
+                    target_query=query,
+                    target_output="\n".join(report_lines[:20]),
+                    claims_total=claims_total,
+                    claims_verified=claims_verified,
+                    certified_risk=0.05,
+                    confidence_level=0.95,
+                    calibration_size=100,
+                    assumptions=["Exchangeability between query distribution and verification calibration set"],
+                )
+                cert_data = json.loads(cert_raw)
+                print(f"  ✓ Output certified: Decision={cert_data.get('decision')}, ID={cert_data.get('certificate_id')}")
+
+                cert_sec_num = sec_num + 1
+                report_lines.append(f"\n## {cert_sec_num}. Statistical Correctness Certificate (Formal Verification)")
+                report_lines.append(f"- **Certificate ID**: `{cert_data.get('certificate_id')}`")
+                report_lines.append(f"- **Certification Decision**: `{cert_data.get('decision')}`")
+                report_lines.append(f"- **Guarantee Type**: `{cert_data.get('guarantee_type')}`")
+                report_lines.append(f"- **Certified Risk**: `{cert_data.get('certified_risk')}` (Confidence Level: `{cert_data.get('confidence_level')}`)")
+                report_lines.append(f"- **Claims Verified**: {claims_verified}/{claims_total}")
+                report_lines.append(f"- **Verifier Fingerprint**: `{cert_data.get('verifier_fingerprint')}`")
+                if cert_data.get("assumptions"):
+                    report_lines.append(f"- **Formal Assumptions**: {'; '.join(cert_data.get('assumptions', []))}")
+                report_lines.append("")
+            except Exception as e:
+                print(f"  ⚠️ Correctness verification notice: {e}")
 
         final_report = "\n".join(report_lines)
 

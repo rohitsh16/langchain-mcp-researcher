@@ -18,6 +18,7 @@ ENV/
 *.egg-info/
 .installed.cfg
 *.egg
+.pytest_cache/
 
 # Go
 *.o

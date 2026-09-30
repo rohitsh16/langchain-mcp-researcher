@@ -50,7 +50,12 @@ graph TD
    - Dynamic MCP tool discovery and binding.
    - Autonomous synthesis pipeline creating structured Markdown research reports with verified citations.
 
-5. **ContextOS Integration (`bin/ctx`, `bin/contextd`)**:
+5. **`ai-correctness-mcp-server` (Python stdio MCP Server)**:
+   - Statistical verification, uncertainty estimation, calibration, and conformal risk control.
+   - Exposes 13 MCP tools for automated claim extraction, verification, uncertainty quantification, conformal bounding, and formal correctness certification.
+   - Includes full-paper evidence extraction (`research/papers/evidence.py`), provenance tracking (`research/ontology/provenance.py`), and SQLite experiment lineage (`research/experiments/registry.py`).
+
+6. **ContextOS Integration (`bin/ctx`, `bin/contextd`)**:
    - Local-first, token-bounded context manager and IDE agent bridge.
    - Auto-configured for Antigravity IDE, Cursor, Claude Code, Codex, and Gemini CLI.
 
@@ -70,11 +75,26 @@ Compile all servers into `bin/`:
 make build-all
 ```
 
-### 2. Run Test Suite
-
+### 2. Run Test Suites
+ 
 Run unit tests across all Go modules:
 ```bash
 make test
+```
+
+Run Python correctness and statistical certification test suites (51 tests):
+```bash
+make unit-test
+```
+
+Run the end-to-end AI correctness smoke test:
+```bash
+make smoke-test
+```
+
+Run the full unified CI pipeline (Go + Python + Smoke Test):
+```bash
+make ci
 ```
 
 ### 3. Verify Agent Integration
@@ -187,13 +207,34 @@ All Go MCP servers communicate over stdio using standard JSON-RPC 2.0:
 │   │   └── topic.go
 │   ├── readme.md
 │   └── go.mod
+├── ai_correctness_mcp_server/         # Statistical verification & conformal risk control server
+│   ├── correctness/                   # Atomic claim decomposition & factuality metrics
+│   ├── uncertainty/                   # Semantic entropy, predictive entropy & ensembles
+│   ├── selective/                     # Selective prediction & risk-coverage evaluation
+│   ├── conformal/                     # Split conformal prediction & risk control
+│   ├── sequential/                    # Wald's SPRT, empirical Bernstein & e-values
+│   ├── verification/                  # Exact, evidence, semantic & programmatic verifiers
+│   ├── certificates/                  # Formal OutputCorrectnessCertificate schema & builder
+│   ├── experiments/                   # Multi-seed experiment execution & artifacts
+│   ├── attacks/                       # Adversarial exploit & distribution shift simulations
+│   ├── benchmarks/                    # SimpleQA & Math reasoning dataset adapters
+│   ├── tests/                         # Full algorithmic test suite (40 tests)
+│   ├── server.py                      # JSON-RPC 2.0 stdio MCP server (13 tools)
+│   └── __main__.py                    # Module entry point (--serve, --smoke-test)
+├── research/                          # Canonical research package & lineage tracking
+│   ├── ontology/                      # Knowledge graph schemas & provenance DAG
+│   ├── literature/                    # Multi-index academic search & deduplication
+│   ├── papers/                        # Full-paper theorem & definition evidence extraction
+│   ├── experiments/                   # SQLite experiment lineage registry & artifact tracking
+│   ├── metrics/                       # Calibration (ECE, ACE, Brier) & risk intervals
+│   └── tests/                         # Canonical research test suite (11 tests)
 ├── langchain-agent/                   # Python research orchestrator
-│   ├── agent_runner.py
-│   ├── mcp_client.py
-│   ├── config.yaml
+│   ├── agent_runner.py                # Multi-MCP research loop with statistical certification
+│   ├── mcp_client.py                  # Resilient JSON-RPC 2.0 stdio client
+│   ├── config.yaml                    # Multi-server configuration
 │   ├── requirements.txt
 │   ├── readme.md
-│   └── reports/                       # Generated research syntheses
+│   └── reports/                       # Certified research reports
 └── .agents/                           # Antigravity IDE MCP, rules, and hook configs
     ├── hooks.json
     ├── mcp_config.json
