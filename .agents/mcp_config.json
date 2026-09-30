@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "contextos": {
+      "args": [
+        "-repo",
+        "/Users/rohitshukla/Desktop/langchain-mcp-researcher",
+        "-mcp"
+      ],
+      "command": "/Users/rohitshukla/Desktop/ContextOS/bin/contextd"
+    }
+  }
+}

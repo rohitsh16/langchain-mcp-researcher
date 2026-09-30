@@ -8,7 +8,6 @@ import (
 	"os"
 )
 
-// JSON-RPC 2.0 protocol types
 type JSONRPCRequest struct {
 	JSONRPC string          `json:"jsonrpc"`
 	ID      any             `json:"id,omitempty"`
@@ -47,40 +46,39 @@ type ToolContent struct {
 func getTools() []MCPTool {
 	return []MCPTool{
 		{
-			Name:        "search_arxiv",
-			Description: "Search arXiv for scientific research papers by topic, keywords, or authors.",
+			Name:        "read_pdf",
+			Description: "Read text and extract sections from a local PDF file.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"query": map[string]any{
+					"path": map[string]any{
 						"type":        "string",
-						"description": "Keywords or search phrase (e.g., 'agentic workflows', 'transformer memory')",
+						"description": "Absolute or relative path to the PDF file",
 					},
-					"max_results": map[string]any{
+					"max_pages": map[string]any{
 						"type":        "integer",
-						"description": "Maximum number of papers to return (1-25, default: 5)",
-					},
-					"sort_by": map[string]any{
-						"type":        "string",
-						"description": "Sorting criteria: 'relevance', 'lastUpdatedDate', or 'submittedDate'",
-						"enum":        []string{"relevance", "lastUpdatedDate", "submittedDate"},
+						"description": "Maximum number of pages to read (default: 5 to conserve context)",
 					},
 				},
-				"required": []string{"query"},
+				"required": []string{"path"},
 			},
 		},
 		{
-			Name:        "get_arxiv_paper",
-			Description: "Fetch full metadata and abstract for a specific paper using its arXiv ID.",
+			Name:        "read_pdf_url",
+			Description: "Download and extract text/sections from a remote PDF URL (e.g. arXiv PDF link).",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"id": map[string]any{
+					"url": map[string]any{
 						"type":        "string",
-						"description": "The arXiv ID of the paper (e.g., '2312.11805' or 'arxiv:2312.11805')",
+						"description": "Direct URL to the PDF file",
+					},
+					"max_pages": map[string]any{
+						"type":        "integer",
+						"description": "Maximum number of pages to extract (default: 5)",
 					},
 				},
-				"required": []string{"id"},
+				"required": []string{"url"},
 			},
 		},
 	}
@@ -88,11 +86,10 @@ func getTools() []MCPTool {
 
 func handleToolCall(name string, rawArgs json.RawMessage) ToolCallResult {
 	switch name {
-	case "search_arxiv":
+	case "read_pdf":
 		var args struct {
-			Query      string `json:"query"`
-			MaxResults int    `json:"max_results"`
-			SortBy     string `json:"sort_by"`
+			Path     string `json:"path"`
+			MaxPages int    `json:"max_pages"`
 		}
 		if err := json.Unmarshal(rawArgs, &args); err != nil {
 			return ToolCallResult{
@@ -100,27 +97,31 @@ func handleToolCall(name string, rawArgs json.RawMessage) ToolCallResult {
 				IsError: true,
 			}
 		}
-		if args.Query == "" {
+		if args.Path == "" {
 			return ToolCallResult{
-				Content: []ToolContent{{Type: "text", Text: "query argument is required"}},
+				Content: []ToolContent{{Type: "text", Text: "path argument is required"}},
 				IsError: true,
 			}
 		}
-		papers, err := SearchArxiv(args.Query, args.MaxResults, args.SortBy)
+		if args.MaxPages <= 0 {
+			args.MaxPages = 5
+		}
+		doc, err := ReadPDF(args.Path, args.MaxPages)
 		if err != nil {
 			return ToolCallResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("search failed: %v", err)}},
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("failed to read PDF: %v", err)}},
 				IsError: true,
 			}
 		}
-		data, _ := json.MarshalIndent(papers, "", "  ")
+		data, _ := json.MarshalIndent(doc, "", "  ")
 		return ToolCallResult{
 			Content: []ToolContent{{Type: "text", Text: string(data)}},
 		}
 
-	case "get_arxiv_paper":
+	case "read_pdf_url":
 		var args struct {
-			ID string `json:"id"`
+			URL      string `json:"url"`
+			MaxPages int    `json:"max_pages"`
 		}
 		if err := json.Unmarshal(rawArgs, &args); err != nil {
 			return ToolCallResult{
@@ -128,20 +129,23 @@ func handleToolCall(name string, rawArgs json.RawMessage) ToolCallResult {
 				IsError: true,
 			}
 		}
-		if args.ID == "" {
+		if args.URL == "" {
 			return ToolCallResult{
-				Content: []ToolContent{{Type: "text", Text: "id argument is required"}},
+				Content: []ToolContent{{Type: "text", Text: "url argument is required"}},
 				IsError: true,
 			}
 		}
-		paper, err := GetArxivPaper(args.ID)
+		if args.MaxPages <= 0 {
+			args.MaxPages = 5
+		}
+		doc, err := ReadPDFURL(args.URL, args.MaxPages)
 		if err != nil {
 			return ToolCallResult{
-				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("fetch failed: %v", err)}},
+				Content: []ToolContent{{Type: "text", Text: fmt.Sprintf("failed to read PDF from URL: %v", err)}},
 				IsError: true,
 			}
 		}
-		data, _ := json.MarshalIndent(paper, "", "  ")
+		data, _ := json.MarshalIndent(doc, "", "  ")
 		return ToolCallResult{
 			Content: []ToolContent{{Type: "text", Text: string(data)}},
 		}
@@ -166,7 +170,7 @@ func handleRequest(req JSONRPCRequest) *JSONRPCResponse {
 					"tools": map[string]any{},
 				},
 				"serverInfo": map[string]any{
-					"name":    "arxiv-mcp-server",
+					"name":    "pdf-reader-mcp-server-go",
 					"version": "1.0.0",
 				},
 			},
@@ -215,7 +219,6 @@ func handleRequest(req JSONRPCRequest) *JSONRPCResponse {
 
 	default:
 		if req.ID == nil {
-			// notification
 			return nil
 		}
 		return &JSONRPCResponse{
@@ -231,9 +234,7 @@ func handleRequest(req JSONRPCRequest) *JSONRPCResponse {
 
 func Run(r io.Reader, w io.Writer) error {
 	scanner := bufio.NewScanner(r)
-	// Allow large lines
-	scanner.Buffer(make([]byte, 1024*1024), 10*1024*1024)
-
+	scanner.Buffer(make([]byte, 1024*1024), 20*1024*1024)
 	encoder := json.NewEncoder(w)
 
 	for scanner.Scan() {
@@ -267,7 +268,7 @@ func Run(r io.Reader, w io.Writer) error {
 
 func main() {
 	if err := Run(os.Stdin, os.Stdout); err != nil {
-		fmt.Fprintf(os.Stderr, "arxiv-mcp-server error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "pdf-reader-mcp-server error: %v\n", err)
 		os.Exit(1)
 	}
 }

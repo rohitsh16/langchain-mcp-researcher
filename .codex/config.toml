@@ -1,0 +1,4 @@
+
+[mcp_servers.contextos]
+command = "/Users/rohitshukla/Desktop/ContextOS/bin/contextd"
+args = ["-repo", "/Users/rohitshukla/Desktop/langchain-mcp-researcher", "-mcp"]

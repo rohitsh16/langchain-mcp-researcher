@@ -1,0 +1,29 @@
+agent:
+  name: "LangChain-MCP-Researcher"
+  model: "gpt-4o-mini"
+  temperature: 0.1
+  max_iterations: 8
+  offline_mode: false
+
+mcp_servers:
+  arxiv:
+    name: "arXiv Academic Search"
+    command: "../bin/arxiv-mcp-server"
+    args: []
+  pdf_reader:
+    name: "PDF Section Extractor"
+    command: "../bin/pdf-reader-mcp-server"
+    args: []
+  software_eng:
+    name: "Software Engineering Knowledge"
+    command: "../bin/software-eng-mcp-server"
+    args: []
+  contextos:
+    name: "ContextOS Persistent Memory & Context"
+    command: "../bin/contextd"
+    args: ["-repo", "..", "-mcp"]
+
+research:
+  max_papers: 5
+  pdf_pages_per_paper: 3
+  output_dir: "./reports"

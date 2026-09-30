@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "'/Users/rohitshukla/Desktop/ContextOS/bin/ctx-hook' -agent 'codex' -event 'PostToolUse'",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "command": "'/Users/rohitshukla/Desktop/ContextOS/bin/ctx-hook' -agent 'codex' -event 'PostToolUseFailure'",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "'/Users/rohitshukla/Desktop/ContextOS/bin/ctx-hook' -agent 'codex' -event 'PreToolUse'",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "'/Users/rohitshukla/Desktop/ContextOS/bin/ctx-hook' -agent 'codex' -event 'SessionStart'",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "'/Users/rohitshukla/Desktop/ContextOS/bin/ctx-hook' -agent 'codex' -event 'Stop'",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "'/Users/rohitshukla/Desktop/ContextOS/bin/ctx-hook' -agent 'codex' -event 'UserPromptSubmit'",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}
